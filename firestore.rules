@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /registered_units/{unitCode} {
+      allow read: if true;
+      allow create: if true;
+    }
+
+    match /comments/{commentId} {
+      allow read, create, update: if true;
+      allow delete: if request.auth != null;
+    }
+
+    match /{collection}/{docId} {
+      // Regla General: Lectura permitida en todos lados
+      allow read: if true;
+
+      // Eventos: Solo admins pueden crear/borrar/modificar todo.
+      // El público SOLO puede modificar el campo 'rsvps' para confirmar asistencia.
+      allow create, delete: if collection.matches('.*_events') && request.auth != null;
+      allow update: if collection.matches('.*_events') && 
+        (request.auth != null || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rsvps']));
+
+      // Configuraciones y Ramas: 
+      // Permitimos la creación pública inicial para que el registro de nuevos distritos funcione.
+      allow create: if (collection.matches('.*_settings') || collection.matches('.*_wards')) && request.auth == null;
+      
+      // Modificaciones y gestión SOLO para usuarios autenticados (líderes)
+      allow update, delete, create: if (collection.matches('.*_settings') || collection.matches('.*_wards')) && request.auth != null;
+    }
+  }
+}

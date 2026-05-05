@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://papafrity.github.io/calendario-iglesia/sitemap.xml
