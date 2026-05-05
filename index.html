@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de la Iglesia</title>
+    <meta name="description"
+        content="Calendario de actividades y eventos para la Iglesia de Jesucristo de los Santos de los Últimos Días.">
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0b1121">
+    <link rel="apple-touch-icon" href="./images/app-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Calendario">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="Calendario Iglesia">
+    <meta name="msapplication-TileColor" content="#0b1121">
+    <meta name="msapplication-config" content="none">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="scriptures.js"></script>
+    <script src="lang.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header & Daily Scripture (Unificado) -->
+        <header class="app-header glass-panel" style="position: relative;">
+
+            <div class="header-top"
+                style="border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div class="logo">
+                    <span data-i18n="title"
+                        style="font-size: 2rem; font-family: 'Cormorant Garamond', serif; color: var(--accent-gold); font-weight: 600;">Calendario
+                        de Actividades</span>
+                </div>
+                <div class="auth-section"
+                    style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-left: auto;">
+                    <button id="pushSubscribeBtn" class="icon-btn theme-btn" title="Recibir Notificaciones"
+                        style="color:var(--accent-gold);">
+                        <i class="fa-solid fa-bell"></i>
+                    </button>
+                    <button id="themeToggleBtn" class="icon-btn theme-btn" title="Cambiar Tema (Claro/Oscuro)">
+                        <i class="fa-solid fa-sun"></i>
+                    </button>
+                    <span id="currentZoneBadge" class="admin-badge"
+                        style="background: rgba(52, 152, 219, 0.2); color: #3498db; display:none; align-items: center; gap: 5px; cursor: default; margin-right: 10px;"
+                        title="Zona Actual"><i class="fa-solid fa-map-location-dot"></i> <span id="currentZoneText"
+                            style="text-transform: lowercase; font-weight: 500;"></span></span>
+                    <button id="loginBtn" class="btn btn-outline">
+                        <i class="fa-solid fa-user-lock"></i><span data-i18n="loginBtn"> Acceso Admin</span>
+                    </button>
+                    <div id="adminControls" class="hidden" style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span id="adminSessionBadge" class="admin-badge"
+                            style="display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-check-circle"></i>
+                            <span id="adminSessionBadgeText">Admin</span></span>
+                        <button id="manageAdminsBtn" class="btn btn-outline hidden" title="Gestionar Administradores"><i
+                                class="fa-solid fa-users-gear"></i></button>
+                        <button id="manageWardsBtn" class="btn btn-outline hidden" title="Crear nueva Zona/Rama" style="border-color: #3498db; color: #3498db;"><i
+                                class="fa-solid fa-map-location-dot"></i></button>
+                        <button id="manageAnnouncementBtn" class="btn btn-outline"
+                            style="border-color: #f39c12; color: #f39c12; padding: 0.3rem 0.6rem;"
+                            title="Aviso Urgente"><i class="fa-solid fa-bullhorn"></i></button>
+                        <button id="logoutBtn" class="btn btn-danger" style="padding: 0.3rem 0.8rem;"><i
+                                class="fa-solid fa-right-from-bracket"></i><span data-i18n="logoutBtn">
+                                Salir</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="announcementBanner"
+                style="display:none; background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); animation: pulseAlert 2s infinite;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span id="announcementText"></span>
+            </div>
+
+            <div class="header-cards" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div class="scripture-card" style="flex: 1; min-width: 300px;">
+                    <div class="scripture-icon">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div class="scripture-content">
+                        <h2 class="scripture-title" data-i18n="scriptureTitle">Escritura del Día</h2>
+                        <p id="dailyScriptureText" class="scripture-text">"Cargando escritura..."</p>
+                        <p id="dailyScriptureRef" class="scripture-ref"></p>
+                    </div>
+                </div>
+
+                <div id="cleaningCard" class="scripture-card" style="flex: 1; min-width: 300px; display: none;">
+                    <div class="scripture-icon" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71;">
+                        <i class="fa-solid fa-broom"></i>
+                    </div>
+                    <div class="scripture-content">
+                        <h2 class="scripture-title" style="color: #2ecc71;" data-i18n="cleaning_title">Limpieza de
+                            Capilla</h2>
+                        <p id="cleaningAssigned" class="scripture-text" style="font-size: 1.1rem; font-weight: 500;">
+                        </p>
+                        <div id="cleaningAdminActions" style="display: none; margin-top: 10px;">
+                            <button id="editCleaningBtn" class="btn btn-outline"
+                                style="font-size: 0.75rem; padding: 4px 8px; border-color: #2ecc71; color: #2ecc71;"
+                                data-i18n="cleaning_assign">Asignar / Editar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Calendar Section -->
+        <main class="calendar-section glass-panel">
+            <div class="calendar-header">
+                <button id="prevMonth" class="icon-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 id="currentMonthYear" class="month-title">Mes Año</h2>
+                <button id="nextMonth" class="icon-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Vista Semanal (Solo visible en celular) -->
+            <div id="mobileWeeklyView" class="mobile-weekly-view hidden-desktop">
+                <h3 data-i18n="weeklyViewTitle"
+                    style="text-align:center; font-family:'Cormorant Garamond', serif; color:var(--accent-gold); margin-bottom: 1rem;">
+                    Vista de la Semana Seleccionada</h3>
+                <div id="weeklyDaysContainer" class="weekly-days-container"></div>
+            </div>
+
+            <div class="filter-container"
+                style="display: flex; justify-content: flex-end; margin-bottom: 1rem; padding: 0 1rem;">
+                <select id="eventFilter"
+                    style="background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.5rem; outline: none; font-family: 'Montserrat', sans-serif;">
+                    <option value="all" data-i18n="filter_all">Todos los Eventos</option>
+                    <option value="general" data-i18n="type_general">General</option>
+                    <option value="youth" data-i18n="type_youth">Mujeres Jóvenes</option>
+                    <option value="young-men" data-i18n="type_youngMen">Hombres Jóvenes</option>
+                    <option value="relief-society" data-i18n="type_relief">Sociedad de Socorro</option>
+                    <option value="elders" data-i18n="type_elders">Elderes</option>
+                    <option value="primary" data-i18n="type_primary">Primaria</option>
+                    <option value="yas" data-i18n="type_yas">JAS</option>
+                    <option value="district" data-i18n="type_district">Distrito</option>
+                    <option value="priesthood" data-i18n="type_priesthood">Sacerdocio</option>
+                </select>
+            </div>
+
+            <div class="event-legend">
+                <span class="legend-item"><span class="legend-color type-general"></span><span data-i18n="type_general">
+                        General</span></span>
+                <span class="legend-item"><span class="legend-color type-youth"></span><span data-i18n="type_youth">
+                        Mujeres Jóvenes</span></span>
+                <span class="legend-item"><span class="legend-color type-young-men"></span><span
+                        data-i18n="type_youngMen"> Hombres Jóvenes</span></span>
+                <span class="legend-item"><span class="legend-color type-relief-society"></span><span
+                        data-i18n="type_relief"> Soc. de Socorro</span></span>
+                <span class="legend-item"><span class="legend-color type-elders"></span><span data-i18n="type_elders">
+                        Elderes</span></span>
+                <span class="legend-item"><span class="legend-color type-primary"></span><span data-i18n="type_primary">
+                        Primaria</span></span>
+                <span class="legend-item"><span class="legend-color type-yas"></span><span data-i18n="type_yas">
+                        JAS</span></span>
+                <span class="legend-item"><span class="legend-color type-district"></span><span
+                        data-i18n="type_district"> Distrito</span></span>
+                <span class="legend-item"><span class="legend-color type-priesthood"></span><span
+                        data-i18n="type_priesthood"> Sacerdocio</span></span>
+            </div>
+
+            <div class="calendar-grid">
+                <!-- Days of week -->
+                <div class="weekdays" id="calendarWeekdays">
+                    <div class="weekday" data-i18n="daysShort_0">Dom</div>
+                    <div class="weekday" data-i18n="daysShort_1">Lun</div>
+                    <div class="weekday" data-i18n="daysShort_2">Mar</div>
+                    <div class="weekday" data-i18n="daysShort_3">Mié</div>
+                    <div class="weekday" data-i18n="daysShort_4">Jue</div>
+                    <div class="weekday" data-i18n="daysShort_5">Vie</div>
+                    <div class="weekday" data-i18n="daysShort_6">Sáb</div>
+                </div>
+
+                <!-- Calendar days will be generated here by JS -->
+                <div id="calendarDays" class="days-grid"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer glass-panel">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span data-i18n="footer_logo">Herramienta de Calendario para Miembros</span>
+                </div>
+                <div class="footer-links"
+                    style="display: flex; gap: 0.5rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+
+                    <button id="openDirectoryBtn" class="btn btn-outline footer-btn"
+                        style="font-size: 0.8rem; padding: 0 1rem; height: 38px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">
+                        <i class="fa-solid fa-address-book"></i> <span data-i18n="footer_directory">Directorio de
+                            Líderes</span>
+                    </button>
+                    <button id="changeUnitCodeBtn" class="btn btn-outline footer-btn"
+                        style="font-size: 0.8rem; padding: 0 1rem; height: 38px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">
+                        <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="footer_changeZone">Cambiar
+                            Zona</span>
+                    </button>
+                    <button id="installAppBtn" class="btn btn-outline footer-btn hidden"
+                        style="font-size: 0.8rem; padding: 0 1rem; height: 38px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">
+                        <i class="fa-solid fa-download"></i><span data-i18n="footer_install"> Instalar App</span>
+                    </button>
+                    <a href="https://www.churchofjesuschrist.org/?lang=spa" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-outline footer-btn"
+                        style="font-size: 0.8rem; padding: 0 1rem; height: 38px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;">
+                        <i class="fa-solid fa-globe"></i><span data-i18n="footer_site"> Visitar Sitio Oficial</span>
+                    </a>
+                    <div class="language-selector" style="margin-right: 0px;">
+                        <select id="langSelect" class="lang-dropdown"
+                            style="background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.3rem; outline: none; font-family: 'Montserrat', sans-serif;">
+                            <option value="es">🇪🇸 ES</option>
+                            <option value="en">🇺🇸 EN</option>
+                            <option value="pt">🇧🇷 PT</option>
+                            <option value="fr">🇫🇷 FR</option>
+                            <option value="it">🇮🇹 IT</option>
+                            <option value="de">🇩🇪 DE</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="footer_copy">Herramienta independiente creada para que los miembros puedan organizar sus días y actividades de forma sencilla.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loader"></div>
+        <p data-i18n="loading">Cargando...</p>
+    </div>
+
+    <!-- Map Picker Modal -->
+    <div id="mapPickerModal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal glass-panel" style="width: 95%; max-width: 600px; padding: 20px;">
+            <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="margin-bottom: 10px; font-size: 1.2rem;"><i class="fa-solid fa-map"></i> Elegir Ubicación</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Navega en el mapa y toca
+                para colocar un marcador en el lugar exacto de la actividad.</p>
+            <div id="leafletMap"
+                style="width: 100%; height: 350px; border-radius: 8px; background: #e0e0e0; z-index: 1;"></div>
+            <p id="mapCoordinatesDisplay"
+                style="text-align: center; font-size: 0.8rem; margin: 10px 0; color: var(--accent-gold);">Selecciona un
+                punto en el mapa</p>
+            <button type="button" id="confirmMapLocationBtn" class="btn btn-primary full-width">Confirmar
+                Ubicación</button>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div id="installPwaPrompt" class="pwa-prompt hidden">
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay hidden">
+            <div class="modal glass-panel">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3 data-i18n="modal_loginTitle">Acceso de Administrador</h3>
+                <p data-i18n="modal_loginDesc">Ingrese sus credenciales para administrar eventos.</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username" data-i18n="modal_user">Usuario</label>
+                        <input type="text" id="username" required placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="password" data-i18n="modal_pass">Contraseña</label>
+                        <input type="password" id="password" required placeholder="1234">
+                    </div>
+                    <div id="loginError" class="error-msg hidden" data-i18n="modal_error">Credenciales incorrectas</div>
+                    <div style="text-align: right; margin-bottom: 1rem;">
+                        <button type="button" id="forgotPassBtn"
+                            style="background: none; border: none; color: #3498db; font-size: 0.8rem; cursor: pointer; text-decoration: underline;"
+                            data-i18n="forgot_btn">¿Olvidó su contraseña?</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width"
+                        data-i18n="modal_loginBtn">Ingresar</button>
+                </form>
+                <!-- Formulario de recuperación de contraseña (oculto por defecto) -->
+                <div id="forgotPassForm" class="hidden"
+                    style="background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 8px; padding: 15px; margin-top: 1rem;">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;"
+                        data-i18n="forgot_desc">
+                        Ingrese el correo electrónico o Nick para restablecer su contraseña:
+                    </p>
+                    <input type="text" id="forgotPassEmail" placeholder="Nick de usuario o correo"
+                        style="width: 100%; margin-bottom: 10px; text-align: center; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                    <button type="button" id="sendResetEmailBtn" class="btn btn-primary full-width"
+                        style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="forgot_send">Enviar enlace de
+                            recuperación</span>
+                    </button>
+                    <p id="forgotPassMsg" class="hidden"
+                        style="margin-top: 10px; font-size: 0.8rem; color: #2ecc71; text-align: center;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Event Modal -->
+        <div id="eventModal" class="modal-overlay hidden">
+            <div class="modal glass-panel">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3 id="eventModalTitle" data-i18n="modal_addEvent">Agregar Evento</h3>
+                <p id="eventModalDate"></p>
+                <form id="eventForm">
+                    <input type="hidden" id="eventDate">
+                    <input type="hidden" id="eventId">
+                    <div class="form-group">
+                        <label for="eventTitle" data-i18n="modal_eventTitle">Título de la Actividad</label>
+                        <input type="text" id="eventTitle" required placeholder="Ej. Noche de Hogar">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventTime" data-i18n="modal_eventTime">Hora</label>
+                        <input type="time" id="eventTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventLocation" data-i18n="modal_eventLoc">Lugar</label>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="eventLocation" placeholder="Ej. Capilla o Link Maps"
+                                style="flex: 1;">
+                            <button type="button" id="openMapModalBtn" class="btn btn-outline"
+                                style="padding: 0 15px; border-color: #2ecc71; color: #2ecc71;"
+                                title="Elegir en el mapa">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                            </button>
+                            <button type="button" id="getGpsBtn" class="btn btn-outline"
+                                style="padding: 0 15px; border-color: #3498db; color: #3498db;"
+                                title="Obtener coordenadas GPS actuales">
+                                <i class="fa-solid fa-location-crosshairs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventImage" data-i18n="event_image">Flyer o Imagen (Opcional)</label>
+                        <input type="file" id="eventImage" accept="image/*"
+                            style="font-size:0.8rem; background:rgba(0,0,0,0.1); padding:0.5rem; border-radius:5px;">
+                        <input type="hidden" id="eventImageBase64">
+                        <img id="eventImagePreview" src="" alt="Previsualización"
+                            style="display:none; width:100%; margin-top:10px; border-radius:8px; max-height:150px; object-fit:cover;">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventDesc" data-i18n="modal_eventDesc">Descripción</label>
+                        <textarea id="eventDesc" rows="3" placeholder="Detalles de la actividad..."></textarea>
+                    </div>
+                    <div id="districtScopeGroup" class="form-group hidden">
+                        <label style="color: var(--accent-gold);"><i class="fa-solid fa-earth-americas"></i> Alcance del Evento</label>
+                        <select id="eventScope" style="background: rgba(212, 175, 55, 0.1); border: 1px solid var(--accent-gold); color: white;">
+                            <option value="ward">Solo este Barrio</option>
+                            <option value="district">Todo el Distrito</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventType" data-i18n="modal_eventType">Tipo</label>
+                        <select id="eventType">
+                            <option value="general">General</option>
+                            <option value="youth">Mujeres Jóvenes</option>
+                            <option value="young-men">Hombres Jóvenes</option>
+                            <option value="relief-society">Sociedad de Socorro</option>
+                            <option value="elders">Elderes</option>
+                            <option value="primary">Primaria</option>
+                            <option value="yas">JAS</option>
+                            <option value="district">Distrito</option>
+                            <option value="priesthood">Sacerdocio</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; flex-direction:row;">
+                        <input type="checkbox" id="eventRequireRsvp"
+                            style="width:auto; margin-right:10px; transform:scale(1.2);">
+                        <label for="eventRequireRsvp" style="margin-bottom:0; cursor:pointer;"
+                            data-i18n="event_rsvp">Requerir confirmación de asistencia</label>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; flex-direction:row;">
+                        <input type="checkbox" id="eventRecurring"
+                            style="width:auto; margin-right:10px; transform:scale(1.2);">
+                        <label for="eventRecurring" style="margin-bottom:0; cursor:pointer;"
+                            data-i18n="event_recurring">Repetir cada semana (12 semanas)</label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="deleteEventBtn" class="btn btn-danger hidden"
+                            data-i18n="modal_delete">Eliminar</button>
+                        <button type="submit" class="btn btn-primary" data-i18n="modal_save">Guardar Evento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- Recurring Action Modal -->
+        <div id="recurringActionModal" class="modal-overlay hidden" style="z-index: 2000;">
+            <div class="modal glass-panel" style="text-align: center; padding: 25px;">
+                <h3 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--accent-gold);"><i class="fa-solid fa-clock-rotate-left"></i> Evento Recurrente</h3>
+                <p style="margin-bottom: 25px; color: var(--text-primary); font-size: 0.95rem;">
+                    Este evento es parte de una serie que se repite cada semana. ¿Qué deseas hacer?
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="recurringActionSingleBtn" class="btn btn-outline" style="width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-calendar-day" style="margin-right: 8px;"></i> SÓLO ESTE EVENTO
+                    </button>
+                    <button id="recurringActionSeriesBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-calendar-days" style="margin-right: 8px;"></i> TODA LA SERIE
+                    </button>
+                    <button id="recurringActionCancelBtn" class="btn" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.1); color: var(--text-secondary); margin-top: 10px;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Details Modal (For non-admins and viewing) -->
+        <div id="eventDetailsModal" class="modal-overlay hidden">
+            <div class="modal glass-panel">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <div class="event-details-header">
+                    <span id="detailEventType" class="event-type-badge"></span>
+                    <h3 id="detailEventTitle"></h3>
+                </div>
+                <div class="event-details-content">
+                    <img id="detailEventImage" src="" alt="Flyer del evento"
+                        style="display:none; width:100%; border-radius:8px; margin-bottom:1rem; object-fit:cover; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />
+                    <p><i class="fa-regular fa-calendar"></i> <span id="detailEventDate"></span> a las <span
+                            id="detailEventTime"></span></p>
+                    <div style="color:var(--text-secondary); margin-bottom:10px; font-size:0.9rem;">
+                        <i class="fa-solid fa-location-dot"></i> <span id="detailEventLocation">Lugar</span>
+                        <div id="detailEventMapContainer" style="margin-top: 5px; display: none;">
+                            <a id="detailEventMapBtn" href="#" target="_blank" class="btn btn-outline"
+                                style="font-size: 0.75rem; padding: 4px 8px; border-color: #3498db; color: #3498db;">
+                                <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_howToGet">Cómo
+                                    llegar</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail-desc">
+                        <h4 data-i18n="modal_eventDesc">Detalles</h4>
+                        <p id="detailEventDesc"></p>
+                    </div>
+
+                    <!-- Sección de Comentarios por Evento -->
+                    <div class="event-comments-container" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; font-size: 1rem; color: var(--accent-gold);"><i class="fa-solid fa-comments"></i> <span data-i18n="comments_title">Preguntas y Comentarios</span></h4>
+                            <button id="subscribeCommentsBtn" class="btn btn-outline" style="font-size: 0.7rem; padding: 4px 8px;">
+                                <i class="fa-regular fa-bell"></i> <span data-i18n="btn_subscribe">Notificarme</span>
+                            </button>
+                        </div>
+                        <div class="comments-form" style="display: flex; gap: 5px; margin-bottom: 10px;">
+                            <input type="text" id="commentInput" placeholder="¿Llevar cubiertos?..." style="flex: 1; padding: 8px; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 0.85rem;">
+                            <button id="submitCommentBtn" class="btn btn-primary" style="padding: 0 12px;"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                        <div id="commentsList" class="comments-list" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">
+                            <!-- Comentarios dinámicos aquí -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="rsvpSection"
+                    style="display:none; margin-top:15px; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid rgba(212, 175, 55, 0.3);">
+                    <h4 style="color:var(--accent-gold); margin-bottom:10px; font-size:1rem;"><i
+                            class="fa-solid fa-clipboard-check"></i> <span data-i18n="rsvp_title">Asistencia</span></h4>
+                    <div id="rsvpSuccessMsg" style="display:none; color:#2ecc71; font-size:0.9rem; margin-bottom:10px;"
+                        data-i18n="rsvp_success">¡Asistencia confirmada exitosamente!</div>
+                    <form id="rsvpForm" style="display:flex; flex-direction:column; gap:10px;">
+                        <input type="text" id="rsvpName" placeholder="Tu nombre o Familia" required
+                            style="width:100%; padding:8px; border-radius:5px; border:none; background:rgba(255,255,255,0.1); color:white;">
+                        <input type="number" id="rsvpCount" placeholder="Cantidad de personas" required min="1"
+                            value="1"
+                            style="width:100%; padding:8px; border-radius:5px; border:none; background:rgba(255,255,255,0.1); color:white;">
+                        <button type="submit" class="btn btn-primary" style="padding:8px; font-size:0.9rem;"
+                            data-i18n="rsvp_submit">Confirmar Asistencia</button>
+                    </form>
+                    <div id="rsvpAdminView"
+                        style="display:none; margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+                        <h5 style="margin-bottom:5px; color:var(--text-secondary); font-size:0.85rem;"
+                            data-i18n="rsvp_adminTitle">Confirmados (Solo Admin):</h5>
+                        <ul id="rsvpList"
+                            style="list-style:none; padding:0; margin:0; font-size:0.85rem; max-height:100px; overflow-y:auto;">
+                        </ul>
+                        <p style="font-weight:bold; font-size:0.9rem; margin-top:5px; margin-bottom:0;"><span
+                                data-i18n="rsvp_total">Total Asistentes</span>: <span id="rsvpTotal"
+                                style="color:var(--accent-gold);">0</span></p>
+                    </div>
+                </div>
+
+                <div class="form-actions"
+                    style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display:flex; flex-direction:column; gap:10px;">
+                    <button type="button" id="shareWhatsappBtn" class="btn btn-whatsapp full-width"
+                        style="background-color:#25D366; color:white; border-color:#25D366;">
+                        <i class="fa-brands fa-whatsapp"></i> <span data-i18n="share_whatsapp">Compartir en
+                            WhatsApp</span>
+                    </button>
+                    <button type="button" id="exportCalendarBtn" class="btn btn-outline full-width">
+                        <i class="fa-regular fa-calendar-plus"></i> <span data-i18n="share_calendar">Añadir a mi
+                            Calendario</span>
+                    </button>
+                </div>
+                <div class="form-actions" id="detailAdminActions"
+                    style="display: none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <button type="button" id="editFromDetailBtn" class="btn btn-outline" data-i18n="modal_detailsEdit">
+                        Editar Evento</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Admins Modal (Solo para Super Admin) -->
+        <div id="manageAdminsModal" class="modal-overlay hidden">
+            <div class="modal glass-panel">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3 data-i18n="modal_manageAdmins">Líderes Autorizados</h3>
+                <p data-i18n="modal_newAccount">Crea cuentas para que otros líderes suban eventos.</p>
+                <form id="createAdminForm"
+                    style="margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;">
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="newAdminUser" required placeholder="Nick de Usuario (ej: obispado)"
+                                style="flex:1;">
+                            <select id="newAdminRole" required
+                                style="flex:1; background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.8rem; outline: none;">
+                                <option value="" disabled selected data-i18n="role_select">Rol / Cargo...</option>
+                                <option value="district" data-i18n="role_district">Presidente de Distrito / Estaca
+                                </option>
+                                <option value="bishopric" data-i18n="role_bishopric">Obispado / Presidencia de Rama
+                                </option>
+                                <option value="clerk" data-i18n="role_clerk">Secretario de Barrio</option>
+                                <option value="leader_rs" data-i18n="role_rs">Presidenta Soc. Socorro</option>
+                                <option value="leader_eq" data-i18n="role_eq">Presidente Cuórum Élderes</option>
+                                <option value="leader_yw" data-i18n="role_yw">Presidenta Mujeres Jóvenes</option>
+                                <option value="leader_ym" data-i18n="role_ym">Presidente Hombres Jóvenes</option>
+                                <option value="leader_pr" data-i18n="role_pr">Presidenta Primaria</option>
+                                <option value="leader_ss" data-i18n="role_ss">Presidente Escuela Dominical</option>
+                            </select>
+                        </div>
+                        <input type="email" id="newAdminRealEmail" required
+                            placeholder="Correo Real del Líder (para recuperación)">
+                        <input type="text" id="newAdminPass" required
+                            placeholder="Contraseña Inicial (Mín. 6 caracteres)">
+                        <input type="hidden" id="editAdminIndex" value="-1">
+                    </div>
+                    <button type="submit" id="adminSubmitBtn" class="btn btn-primary full-width"
+                        style="margin-top:10px;" data-i18n="modal_createBtn">Crear Cuenta de Líder</button>
+                    <button type="button" id="cancelEditAdminBtn" class="btn btn-outline full-width hidden"
+                        style="margin-top:5px; border-color:#e74c3c; color:#e74c3c;"
+                        data-i18n="admin_cancelEdit">Cancelar Edición</button>
+                </form>
+                <h4 data-i18n="modal_activeAccounts">Cuentas Activas</h4>
+                <div id="adminsList" style="max-height: 150px; overflow-y: auto; margin-top: 10px;">
+                    <!-- JS insertará administradores aquí -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Wards Modal (Solo para Presidente de Distrito) -->
+        <div id="manageWardsModal" class="modal-overlay hidden">
+            <div class="modal glass-panel">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3>Gestionar Zonas / Ramas</h3>
+                <p>Crea una nueva zona o rama en tu distrito actual (<span id="manageWardsDistrictName" style="color:var(--accent-gold);"></span>).</p>
+                <form id="createWardForm" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>Nombre de la Nueva Rama/Barrio</label>
+                        <input type="text" id="newWardName" required placeholder="Ej: Rama Centro">
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width" style="margin-top:10px;">Crear Zona/Rama</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bulletin Modal -->
+        <div id="bulletinModal" class="modal-overlay hidden">
+            <div class="modal glass-panel" style="max-width: 600px; text-align: center;">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h2 style="font-family: 'Cormorant Garamond', serif; color: var(--accent-gold); margin-bottom: 5px;"
+                    data-i18n="bull_title">Reunión Sacramental</h2>
+                <p id="bulletinDate" style="color: var(--text-secondary); margin-bottom: 20px; font-style: italic;"
+                    data-i18n="bull_subtitle">Programa Dominical</p>
+
+                <div id="bulletinViewContent" style="text-align: left; padding: 10px;">
+                    <!-- Content injected via JS -->
+                </div>
+
+                <form id="bulletinEditForm" class="hidden"
+                    style="text-align: left; max-height: 50vh; overflow-y: auto; padding: 10px;">
+                    <div class="form-group">
+                        <label data-i18n="bull_presiding">Preside</label>
+                        <input type="text" id="bullPresiding">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_conducting">Dirige</label>
+                        <input type="text" id="bullConducting">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_openHymn">Himno Inicial</label>
+                        <input type="text" id="bullOpeningHymn">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_invocation">Primera Oración</label>
+                        <input type="text" id="bullInvocation">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_wardBiz">Asuntos del Barrio / Anuncios</label>
+                        <textarea id="bullWardBusiness" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_sacHymn">Himno Sacramental</label>
+                        <input type="text" id="bullSacramentHymn">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_speakers">Discursantes</label>
+                        <textarea id="bullSpeakers" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_closeHymn">Himno Final</label>
+                        <input type="text" id="bullClosingHymn">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bull_benediction">Última Oración</label>
+                        <input type="text" id="bullBenediction">
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width" style="margin-top: 10px;"
+                        data-i18n="bull_saveBtn">Guardar Programa</button>
+                </form>
+
+                <div class="form-actions" style="margin-top: 20px; display:none;" id="bulletinAdminActions">
+                    <button type="button" id="editBulletinBtn" class="btn btn-outline" data-i18n="bull_editBtn">Editar
+                        Programa</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cleaning Assignment Modal -->
+        <div id="cleaningModal" class="modal-overlay hidden">
+            <div class="modal glass-panel" style="max-width: 400px; text-align: center;">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3 style="color: #2ecc71; margin-bottom: 10px;"><i class="fa-solid fa-broom"></i> <span
+                        data-i18n="cleaning_modalTitle">Asignar Limpieza</span></h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;"
+                    data-i18n="cleaning_modalDesc">
+                    Escriba las familias asignadas para este sábado. Al guardar, se enviará una notificación.
+                </p>
+                <form id="cleaningForm" style="text-align: left;">
+                    <div class="form-group">
+                        <label data-i18n="cleaning_who">¿Quién limpia esta semana?</label>
+                        <input type="text" id="cleaningName" placeholder="Ej: Familia Pérez y Gómez">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;"
+                        data-i18n="cleaning_emptyNote">Si dejas el campo vacío, el cuadro desaparecerá y no se enviará
+                        aviso.</p>
+                    <button type="submit" class="btn btn-primary full-width"
+                        style="background-color: #2ecc71; border-color: #2ecc71; color: #1a1a2e; font-weight: bold;">
+                        <i class="fa-solid fa-bell"></i> <span data-i18n="cleaning_saveBtn">Guardar y Enviar
+                            Aviso</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Directory Modal -->
+        <div id="directoryModal" class="modal-overlay hidden">
+            <div class="modal glass-panel" style="max-width: 500px;">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h2
+                    style="font-family: 'Cormorant Garamond', serif; color: #3498db; margin-bottom: 20px; text-align: center;">
+                    <i class="fa-solid fa-address-book"></i> <span data-i18n="dir_title">Contacto de Líderes</span>
+                </h2>
+
+                <div id="directoryList"
+                    style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 5px;">
+                    <!-- Content injected via JS -->
+                </div>
+
+                <div id="directoryAdminActions"
+                    style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: none;">
+                    <h4 style="margin-bottom: 10px; color: var(--text-secondary);" data-i18n="dir_addTitle">Agregar
+                        Líder (Admin)</h4>
+                    <form id="addLeaderForm" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="text" id="leaderRole" placeholder="Llamamiento (Ej. Obispo)" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="text" id="leaderName" placeholder="Nombre completo" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="tel" id="leaderPhone" placeholder="Teléfono (Ej. +54911...)" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" data-i18n="dir_saveBtn">Guardar Contacto</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Aviso Urgente -->
+        <div id="announcementModal" class="modal-overlay hidden">
+            <div class="modal glass-panel" style="max-width: 400px; text-align: center;">
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                <h3 style="color: #f39c12; margin-bottom: 10px;"><i class="fa-solid fa-bullhorn"></i> <span
+                        data-i18n="announcement_title">Aviso Urgente</span></h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;"
+                    data-i18n="announcement_desc">
+                    Escriba un aviso para mostrar de forma destacada en la parte superior. Déjelo vacío para ocultar el
+                    aviso.
+                </p>
+                <form id="announcementForm" style="text-align: left;">
+                    <div class="form-group">
+                        <textarea id="announcementInput" rows="3"
+                            placeholder="Ej: La actividad de hoy se suspende por lluvia..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width"
+                        style="background-color: #f39c12; border-color: #f39c12; color: #fff; font-weight: bold;">
+                        <i class="fa-solid fa-satellite-dish"></i> <span data-i18n="announcement_save">Publicar
+                            Aviso</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Unit Code Modal (SaaS Identifier) -->
+        <div id="unitCodeModal" class="modal-overlay hidden"
+            style="z-index: 9999; backdrop-filter: blur(15px); background: rgba(0,0,0,0.85);">
+            <div class="modal glass-panel" style="max-width: 450px; text-align: center;">
+                <h2 style="color: var(--accent-gold); margin-bottom: 10px;"><i class="fa-solid fa-map-location-dot"></i>
+                    <span data-i18n="unit_welcome">Bienvenido</span>
+                </h2>
+
+                <!-- PASO 1: Buscar Distrito -->
+                <div id="districtSearchView">
+                    <p style="margin-bottom: 15px; font-size: 0.95rem; color: var(--text-secondary);" data-i18n="unit_districtSearch">
+                        Busca tu <strong>Distrito o Estaca</strong> para comenzar:
+                    </p>
+                    <div class="form-group" style="position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                        <input type="text" id="districtSearchInput" data-i18n-ph="unit_districtPh" placeholder="Ej: Lima Central" 
+                            style="text-align: center; font-size: 1.1rem; padding-left: 40px; text-transform: lowercase;">
+                    </div>
+                    <div id="districtResults" class="results-list" style="max-height: 200px; overflow-y: auto; margin-top: 10px; border-radius: 8px;">
+                        <!-- Los resultados aparecerán aquí -->
+                    </div>
+                    <p style="margin-top: 20px; font-size: 0.85rem;">
+                        <span data-i18n="unit_leaderQ">¿Eres líder y quieres crear un calendario para tu zona?</span>
+                        <br><a href="#" id="showRegisterUnitBtn"
+                            style="color: var(--accent-gold); font-weight: bold; text-decoration: none;"><i
+                                class="fa-solid fa-plus"></i> <span data-i18n="unit_registerBtn">Registrar Nuevo Distrito</span></a>
+                    </p>
+                </div>
+
+                <!-- PASO 2: Seleccionar Barrio (oculto) -->
+                <div id="wardSelectView" class="hidden">
+                    <div style="background: rgba(212, 175, 55, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                        <p style="font-size: 0.85rem; color: var(--accent-gold); margin: 0;" data-i18n="unit_districtSelected">Distrito Seleccionado:</p>
+                        <strong id="selectedDistrictName" style="color: white; font-size: 1.1rem;"></strong>
+                    </div>
+                    <p style="margin-bottom: 15px; font-size: 0.95rem; color: var(--text-secondary);" data-i18n="unit_wardSelect">
+                        Ahora selecciona tu <strong>Barrio o Rama</strong>:
+                    </p>
+                    <div id="wardResults" class="results-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-radius: 8px;">
+                        <!-- Los barrios aparecerán aquí -->
+                    </div>
+                    <button id="backToDistrictsBtn" class="btn btn-outline full-width" style="margin-top: 10px;">
+                        <i class="fa-solid fa-arrow-left"></i> <span data-i18n="unit_changeDistrict">Cambiar Distrito</span>
+                    </button>
+                </div>
+
+                <!-- VISTA DE REGISTRO: Crear Distrito y Primer Barrio -->
+                <div id="unitRegisterView" class="hidden">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 15px;" data-i18n="unit_regDistrictTitle">Nuevo Distrito</h3>
+                    <form id="registerDistrictForm">
+                        <div class="form-group" style="display:flex; flex-direction:column; gap:10px;">
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); text-align: left;" data-i18n="unit_regDistrictLabel">Nombre del Distrito/Estaca:</label>
+                            <input type="text" id="regDistrictName" placeholder="Ej: Lima Central" required style="text-align:center; text-transform: lowercase;">
+                            
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); text-align: left;" data-i18n="unit_regWardLabel">Nombre de tu Barrio/Rama inicial:</label>
+                            <input type="text" id="regFirstWardName" placeholder="Ej: Barrio Central" required style="text-align:center; text-transform: lowercase;">
+                            
+                            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
+                            
+                            <label style="font-size: 0.8rem; color: var(--text-secondary); text-align: left;" data-i18n="unit_regAdminLabel">Datos del Presidente de Distrito:</label>
+                            <input type="text" id="regAdminUser" placeholder="Tu nombre o Nick" required style="text-align:center;">
+                            <input type="email" id="regAdminEmail" placeholder="Correo electrónico real" required style="text-align:center;">
+                            <input type="password" id="regAdminPass" placeholder="Contraseña (mín. 6 caracteres)" required style="text-align:center;">
+                        </div>
+                        <button type="submit" class="btn btn-primary full-width" style="margin-top:15px;">
+                            <i class="fa-solid fa-rocket"></i> <span data-i18n="unit_regSubmit">Crear Distrito y Barrio</span>
+                        </button>
+                    </form>
+                    <p style="margin-top: 20px; font-size: 0.85rem;">
+                        <a href="#" id="showLoginUnitBtn" style="color: var(--text-secondary); text-decoration: none;">
+                            <i class="fa-solid fa-arrow-left"></i> <span data-i18n="unit_back">Volver a buscar</span>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firebase SDK (Version 8 compat) -->
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+        <script src="app.js"></script>
+        <script>
+            // Registrar Service Worker para PWA con lógica de actualización automática
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registrado con éxito', registration.scope);
+                            registration.update(); // Forzar revisión de nueva versión en cada carga
+                            
+                            // Detectar actualizaciones
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // Nueva versión detectada, recargar
+                                        console.log('Nueva versión disponible. Actualizando...');
+                                        window.location.reload();
+                                    }
+                                });
+                            });
+                        })
+                        .catch(error => {
+                            console.log('Fallo al registrar el ServiceWorker', error);
+                        });
+                });
+            }
+        </script>
+</body>
+
+</html>

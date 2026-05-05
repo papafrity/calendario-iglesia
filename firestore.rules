@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === COLECCIONES GLOBALES ===
+    
+    // Unidades registradas: lectura individual y creación permitida para el sistema SaaS
+    match /registered_units/{unitCode} {
+      allow get: if true;
+      allow create: if true;
+    }
+
+    // === COLECCIONES PRINCIPALES (sin prefijo de barrio - Legacy) ===
+
+    // Eventos: lectura pública, crear/borrar solo admins, actualizar público (para RSVP)
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, delete: if request.auth != null;
+      allow update: if true;
+    }
+
+    // Admins: solo usuarios autenticados
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Settings (directorio, push subs, boletín, limpieza): lectura pública, escritura pública
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // === COLECCIONES CON PREFIJO DE BARRIO (SaaS multi-unidad) ===
+    // Formato: {codigo}_events, {codigo}_admins, {codigo}_settings
+    // La regla wildcard cubre todas las colecciones con prefijo
+    match /{collection}/{docId} {
+      // Lectura siempre permitida
+      allow read: if true;
+
+      // Escritura pública a settings para permitir el funcionamiento del Super Admin local y RSVP
+      allow write: if collection.matches('.*_settings') || collection.matches('.*_events');
+      
+      // Escritura: permitida si es autenticado
+      allow create, delete: if request.auth != null;
+      allow update: if true;
+    }
+  }
+}
